@@ -63,12 +63,76 @@ for year in years:
     # Calculate stats and put it in the result under this year
     result_data[year] = calc_stats(file_df)
 
+
 # Calculate stats of the total dataframe and put it in the result under 'All'
 result_data['All'] = calc_stats(total_df)
 
 # Print the resulting object with nice formatting
 print(json.dumps(result_data, indent=4))
 
+# Let's turn that into a multi indexed dataframe, should've probably done this at the start but only thought of it now so whatever
+# Get first index array - the years and 'All'
+years_and_all = np.array(list(result_data.keys()))
+# Get second index array - the variable names (AT, AP, AFDP, etc)
+variables = np.array(list(result_data['All'].keys()))
+# Make multi index
+midx = pd.MultiIndex.from_product([years_and_all, variables])
+
+# Create the actual dataframe, the columns are the statistics names (mean, median, etc)
+df = pd.DataFrame(index = midx, columns = list(variable_data.keys()))
+
+# Fill dataframe with data we got earlier
+for year in result_data:
+    for variable in result_data[year]:
+        for statistic in result_data[year][variable]:
+            value = result_data[year][variable][statistic]
+            df[statistic][year][variable] = value
+
+# Print the start of it, we can now easily use this for the plots
+print(df.head())
+
+# TODO charts:
+
+# labels = result_data['All'].keys()
+
+
+
+# labels = ['G1', 'G2', 'G3', 'G4', 'G5']
+# men_means = [20, 34, 30, 35, 27]
+# women_means = [25, 32, 34, 20, 25]
+
+# x = np.arange(len(labels))  # the label locations
+# width = 0.35  # the width of the bars
+
+# fig, ax = plt.subplots()
+# rects1 = ax.bar(x - width/2, men_means, width, label='Men')
+# rects2 = ax.bar(x + width/2, women_means, width, label='Women')
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+# ax.set_ylabel('Scores')
+# ax.set_title('Scores by group and gender')
+# ax.set_xticks(x)
+# ax.set_xticklabels(labels)
+# ax.legend()
+
+
+# def autolabel(rects):
+    # """Attach a text label above each bar in *rects*, displaying its height."""
+    # for rect in rects:
+        # height = rect.get_height()
+        # ax.annotate('{}'.format(height),
+                    # xy=(rect.get_x() + rect.get_width() / 2, height),
+                    # xytext=(0, 3),  # 3 points vertical offset
+                    # textcoords="offset points",
+                    # ha='center', va='bottom')
+
+
+# autolabel(rects1)
+# autolabel(rects2)
+
+# fig.tight_layout()
+
+# plt.show()
 
     
 
