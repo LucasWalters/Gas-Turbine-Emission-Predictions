@@ -29,7 +29,7 @@ variable_data = {
     'correlations': None # and this
 }
 
-def range(series):
+def s_range(series):
     return np.ptp(series)
 
 # Function that actually calculates the statistics from the dataframe and puts it in a variable_data object
@@ -41,7 +41,7 @@ def calc_stats(df):
         stats['mean'] = df[variable].mean()
         stats['median'] = df[variable].median()
         stats['standard_deviation'] = df[variable].std()
-        stats['range'] = range(df[variable])
+        stats['range'] = s_range(df[variable])
         result[variable] = stats
     return result
 
