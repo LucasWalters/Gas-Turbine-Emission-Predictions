@@ -42,7 +42,8 @@ def calc_stats(df):
         stats['percentile_1'] = np.percentile(df[variable], 1)
         stats['percentile_99'] = np.percentile(df[variable], 99)
         result[variable] = stats
-    print(df.corr(method='spearman'))
+    # Just kind of awkwardly stick this matrix in the results
+    result['correlation'] = df.corr(method='spearman')
     return result
 
 # Years that we have data from
@@ -63,7 +64,7 @@ for year in years:
         total_df = file_df
     else:
         total_df = pd.concat([total_df, file_df])
-    print(year)
+    
     # Calculate stats and put it in the result under this year
     result_data[year] = calc_stats(file_df)
 
@@ -88,6 +89,7 @@ df = pd.DataFrame(index = midx, columns = list(variable_data.keys()))
 # Fill dataframe with data we got earlier
 for year in result_data:
     for variable in result_data[year]:
+        if(variable == 'correlation'): continue
         for statistic in result_data[year][variable]:
             value = result_data[year][variable][statistic]
             df[statistic][year][variable] = value
@@ -95,9 +97,15 @@ for year in result_data:
 # Print the start of it, we can now easily use this for the plots
 print(df.head())
 
+# Write yearly data to file
 for variable in variable_data.keys():
     df[variable] = df[variable].astype(float)
 df.to_csv('data.csv', float_format='%.2f')
+
+# Write correlation matrices to file
+for year in years:
+    result_data[year]['correlation'].to_csv('correlation_'+str(year)+'.csv', float_format='%.2f')
+
 # TODO charts:
 
 # labels = result_data['All'].keys()
