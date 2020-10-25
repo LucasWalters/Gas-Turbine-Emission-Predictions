@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import json
+import seaborn as sns
 
 # File naming and path
 data_folder = 'pp_gas_emission'
@@ -105,6 +106,8 @@ df.to_csv('data.csv', float_format='%.2f')
 # Write correlation matrices to file
 for year in years:
     result_data[year]['correlation'].to_csv('correlation_'+str(year)+'.csv', float_format='%.2f')
+    sns.heatmap(result_data[year]['correlation'].round(2), annot=True, vmin=-1, vmax=1, center=0, cmap='coolwarm', square=True)
+    plt.show()
 
 # TODO charts:
 
