@@ -41,8 +41,8 @@ def calc_stats(df):
         stats['range'] = np.ptp(df[variable])
         stats['percentile_1'] = np.percentile(df[variable], 1)
         stats['percentile_99'] = np.percentile(df[variable], 99)
-        print(df.corr(method='spearman'))
         result[variable] = stats
+    print(df.corr(method='spearman'))
     return result
 
 # Years that we have data from
@@ -63,7 +63,7 @@ for year in years:
         total_df = file_df
     else:
         total_df = pd.concat([total_df, file_df])
-    
+    print(year)
     # Calculate stats and put it in the result under this year
     result_data[year] = calc_stats(file_df)
 
