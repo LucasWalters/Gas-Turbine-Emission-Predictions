@@ -41,6 +41,7 @@ def calc_stats(df):
         stats['range'] = np.ptp(df[variable])
         stats['percentile_1'] = np.percentile(df[variable], 1)
         stats['percentile_99'] = np.percentile(df[variable], 99)
+        print(df.corr(method='spearman'))
         result[variable] = stats
     return result
 
