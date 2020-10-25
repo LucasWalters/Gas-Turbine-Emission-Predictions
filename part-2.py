@@ -23,11 +23,10 @@ dir_sep = '/'
 variable_data = {
     'mean': None,
     'median': None,
-    'percentile_1': None, # dunno what this is so format might be wrong
+    'percentile_1': None,
     'percentile_99': None,
     'standard_deviation': None,
     'range': None
-    #'correlations': None # and this
 }
 
 # Function that actually calculates the statistics from the dataframe and puts it in a variable_data object
@@ -43,8 +42,6 @@ def calc_stats(df):
         stats['percentile_1'] = np.percentile(df[variable], 1)
         stats['percentile_99'] = np.percentile(df[variable], 99)
         result[variable] = stats
-    # Just kind of awkwardly stick this matrix in the results
-    result['correlation'] = df.corr(method='spearman')
     return result
 
 # Years that we have data from
@@ -52,6 +49,7 @@ years = [ '2011', '2012', '2013', '2014', '2015' ]
 
 # Final result object
 result_data = {}
+correlation_matrices = {}
 # Dataframe that will contain all files combined
 total_df = None
 
@@ -68,11 +66,12 @@ for year in years:
     
     # Calculate stats and put it in the result under this year
     result_data[year] = calc_stats(file_df)
+    correlation_matrices[year] = file_df.corr(method='spearman')
 
 
 # Calculate stats of the total dataframe and put it in the result under 'All'
 result_data['All'] = calc_stats(total_df)
-
+correlation_matrices['All'] = total_df.corr(method='spearman')
 # Print the resulting object with nice formatting
 print(json.dumps(result_data, indent=4))
 
@@ -88,12 +87,11 @@ midx = pd.MultiIndex.from_product([years_and_all, variables])
 df = pd.DataFrame(index = midx, columns = list(variable_data.keys()))
 
 # Fill dataframe with data we got earlier
-for year in result_data:
-    for variable in result_data[year]:
-        if(variable == 'correlation'): continue
-        for statistic in result_data[year][variable]:
-            value = result_data[year][variable][statistic]
-            df[statistic][year][variable] = value
+for index in result_data:
+    for variable in result_data[index]:
+        for statistic in result_data[index][variable]:
+            value = result_data[index][variable][statistic]
+            df[statistic][index][variable] = value
 
 # Print the start of it, we can now easily use this for the plots
 print(df.head())
@@ -104,13 +102,13 @@ for variable in variable_data.keys():
 df.to_csv('data.csv', float_format='%.2f')
 
 # Write correlation matrices to file and plot them
-for year in years:
-    result_data[year]['correlation'].to_csv('correlation_'+str(year)+'.csv', float_format='%.2f')
+for index in correlation_matrices:
+    correlation_matrices[index].to_csv('correlation_'+str(index)+'.csv', float_format='%.2f')
 
     plt.figure(figsize=(8, 5.5))
-    sns.heatmap(result_data[year]['correlation'].round(2), annot=True, vmin=-1, vmax=1, center=0, cmap='coolwarm', square=True)
+    sns.heatmap(correlation_matrices[index].round(2), annot=True, vmin=-1, vmax=1, center=0, cmap='coolwarm', square=True)
     plt.yticks(rotation=0) 
-    plt.savefig('Correlations_'+str(year)+'.png',bbox_inches='tight')
+    plt.savefig('Correlations_'+str(index)+'.png',bbox_inches='tight')
 
 # TODO charts:
 
