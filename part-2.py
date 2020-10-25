@@ -94,6 +94,9 @@ for year in result_data:
 # Print the start of it, we can now easily use this for the plots
 print(df.head())
 
+for variable in variable_data.keys():
+    df[variable] = df[variable].astype(float)
+df.to_csv('data.csv', float_format='%.2f')
 # TODO charts:
 
 # labels = result_data['All'].keys()
