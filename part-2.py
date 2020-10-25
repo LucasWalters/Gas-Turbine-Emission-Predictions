@@ -103,11 +103,14 @@ for variable in variable_data.keys():
     df[variable] = df[variable].astype(float)
 df.to_csv('data.csv', float_format='%.2f')
 
-# Write correlation matrices to file
+# Write correlation matrices to file and plot them
 for year in years:
     result_data[year]['correlation'].to_csv('correlation_'+str(year)+'.csv', float_format='%.2f')
+
+    plt.figure(figsize=(8, 5.5))
     sns.heatmap(result_data[year]['correlation'].round(2), annot=True, vmin=-1, vmax=1, center=0, cmap='coolwarm', square=True)
-    plt.show()
+    plt.yticks(rotation=0) 
+    plt.savefig('Correlations_'+str(year)+'.png',bbox_inches='tight')
 
 # TODO charts:
 
