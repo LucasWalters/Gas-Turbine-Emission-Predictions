@@ -25,8 +25,8 @@ variable_data = {
     'percentile_1': None, # dunno what this is so format might be wrong
     'percentile_99': None,
     'standard_deviation': None,
-    'range': None, # or this
-    'correlations': None # and this
+    'range': None
+    #'correlations': None # and this
 }
 
 # Function that actually calculates the statistics from the dataframe and puts it in a variable_data object
