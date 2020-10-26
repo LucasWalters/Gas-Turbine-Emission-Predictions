@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn import linear_model
+from sklearn.metrics import mean_absolute_error
 
 # File naming and path
 data_folder = 'pp_gas_emission'
@@ -56,6 +57,10 @@ Ps = regr.predict(validation_df.iloc[:, :-1])
 
 correlation_df = pd.DataFrame({'NOXa': Ps, 'NOXb': validation_df['NOX']}, columns=['NOXa', 'NOXb'])
 
-NOX_correlation = correlation_df.corr(method='spearman')
+NOX_correlation = correlation_df.corr(method='spearman').iloc[1][0]
+NOX_mae = mean_absolute_error(validation_df['NOX'], Ps)
+NOX_r2 = correlation_df.corr(method='pearson').iloc[1][0] ** 2
 
-print(NOX_correlation)
+print("NOX Spearman Correlation: " + str(NOX_correlation))
+print("NOX Mean absolute error: " + str(NOX_mae))
+print("NOX R^2: " + str(NOX_r2))
