@@ -9,8 +9,9 @@ import seaborn as sns
 print_data = False
 print_corr_matrix = False
 save_csv = False
-save_corr_matrices = True
+save_corr_matrices = False
 save_bar_chart = False
+save_line_chart = True
 
 
 # File naming and path
@@ -154,7 +155,7 @@ if save_corr_matrices:
         plt.yticks(rotation=0) 
         plt.savefig('Correlations_'+str(index)+'.png',bbox_inches='tight')
 
-
+corr_change_variables = variables[:-2]
 
 if save_bar_chart:
     # Prepare data for bar charts
@@ -163,25 +164,61 @@ if save_bar_chart:
     fig, ax = plt.subplots()
     x = []  # the label locations
     width = 0.1  # the width of the bars
-    label_width = width * len(variables)
+    label_width = width * len(corr_change_variables)
     for i in range(len(labels)):
         x.append(label_width * i)
     x = np.array(x)
+    
+    
 
-
-    for i, variable in enumerate(variables):
-        variable_means = list(df_swapped['mean'][variable])
-        rects = ax.bar(x + i * width, variable_means, width, label=variable, align='edge')
+    for i, variable in enumerate(corr_change_variables):
+        variable_corrs = []
+        for index in years_and_all:
+            variable_corrs.append(correlation_matrices[index]['NOX'][variable])
+            
+        print(variable_corrs)
+        rects = ax.bar(x + i * width, variable_corrs, width, label=variable, align='edge')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
-    ax.set_ylabel('Mean')
-    ax.set_title('Mean of variables by year')
+    ax.set_ylabel('Correlation with NOx')
+    ax.set_title('Correlation with NOx of variables by year')
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.legend()
 
     fig.tight_layout()
 
+    plt.show()
+    
+if save_line_chart:
+    # Prepare data for bar charts
+    df_swapped = df.swaplevel(0, 1, axis=0)
+    labels = years
+    fig, ax = plt.subplots()
+    # x = []  # the label locations
+    # label_width = width * len(corr_change_variables)
+    # for i in range(len(labels)):
+        # x.append(label_width * i)
+    # x = np.array(x)
+    
+
+    ax.axhline(linewidth=1, color='k', linestyle='dashed')
+    for i, variable in enumerate(corr_change_variables):
+        variable_corrs = []
+        for index in years:
+            variable_corrs.append(correlation_matrices[index]['NOX'][variable])
+            
+        ax.plot(years, variable_corrs, '--.', label=variable)
+        
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Correlation with NOx')
+    ax.set_title('Correlation with NOx of variables by year')
+    # ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    plt.legend(title='Variables', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize='small')
+
+    fig.tight_layout()
+    plt.ylim(-1, 1)
     plt.show()
     
 
