@@ -67,7 +67,8 @@ for year in years:
     # Read the data of this year
     file_path = data_folder + dir_sep + file_prefix + year + file_suffix
     file_df = pd.read_csv(file_path)
-    
+    del file_df['CO']
+
     # Add to total dataframe
     if total_df is None:
         total_df = file_df
