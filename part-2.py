@@ -145,23 +145,11 @@ if save_bar_chart:
     for i in range(len(labels)):
         x.append(label_width * i)
     x = np.array(x)
-    print(x)
-
-    def autolabel(rects):
-        """Attach a text label above each bar in *rects*, displaying its height."""
-        for rect in rects:
-            height = rect.get_height()
-            ax.annotate('{}'.format(height),
-                        xy=(rect.get_x() + rect.get_width() / 2, height),
-                        xytext=(0, 3),  # 3 points vertical offset
-                        textcoords="offset points",
-                        ha='center', va='bottom')
 
 
     for i, variable in enumerate(variables):
         variable_means = list(df_swapped['mean'][variable])
         rects = ax.bar(x + i * width, variable_means, width, label=variable, align='edge')
-        autolabel(rects)
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Mean')
