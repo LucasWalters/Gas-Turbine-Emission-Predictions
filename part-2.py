@@ -110,6 +110,23 @@ for index in correlation_matrices:
     plt.yticks(rotation=0) 
     plt.savefig('Correlations_'+str(index)+'.png',bbox_inches='tight')
 
+# Render correlation change matrix
+change_matrix = abs(correlation_matrices['2015'] - correlation_matrices['2011']).round(2)
+plt.figure(figsize=(8, 5.5))
+
+colors = [(0, '#eeeeee'),
+          (0.2, '#eeeeee'),
+          (0.20001, 'lightgrey'),
+          (0.7, '#b30326'),
+          (1, '#b30326')]
+
+cmap = matplotlib.colors.LinearSegmentedColormap.from_list('help', colors)
+mask = np.triu(np.ones_like(change_matrix, dtype=bool))
+sns.heatmap(change_matrix, annot=True, mask=mask, vmin=0.0, vmax=1.0, center=0.5, cmap=cmap, square=True)
+plt.yticks(rotation=0)
+plt.savefig('Correlations_Change.png',bbox_inches='tight')
+
+
 # TODO charts:
 
 # labels = result_data['All'].keys()
