@@ -7,9 +7,9 @@ import seaborn as sns
 
 
 print_data = False
-print_corr_matrix = True
+print_corr_matrix = False
 save_csv = False
-save_corr_matrices = False
+save_corr_matrices = True
 save_bar_chart = False
 
 
@@ -123,9 +123,31 @@ if save_csv:
     df.to_csv('data.csv', float_format='%.2f')
 
 if save_corr_matrices:
-# Write correlation matrices to file and plot them
+    # Write correlation matrices to file and plot them
     for index in correlation_matrices:
         correlation_matrices[index].to_csv('correlation_'+str(index)+'.csv', float_format='%.2f')
+
+        plt.figure(figsize=(8, 5.5))
+        sns.heatmap(correlation_matrices[index].round(2), annot=True, vmin=-1, vmax=1, center=0, cmap='coolwarm', square=True)
+        plt.yticks(rotation=0) 
+        plt.savefig('Correlations_'+str(index)+'.png',bbox_inches='tight')
+
+        # Render correlation change matrix
+        change_matrix = abs(correlation_matrices['2015'] - correlation_matrices['2011']).round(2)
+        plt.figure(figsize=(8, 5.5))
+
+        colors = [(0, '#eeeeee'),
+                  (0.2, '#eeeeee'),
+                  (0.20001, 'lightgrey'),
+                  (0.7, '#b30326'),
+                  (1, '#b30326')]
+
+        cmap = matplotlib.colors.LinearSegmentedColormap.from_list('help', colors)
+        mask = np.triu(np.ones_like(change_matrix, dtype=bool))
+        sns.heatmap(change_matrix, annot=True, mask=mask, vmin=0.0, vmax=1.0, center=0.5, cmap=cmap, square=True)
+        plt.yticks(rotation=0)
+        plt.savefig('Correlations_Change.png',bbox_inches='tight')
+
 
         plt.figure(figsize=(8, 5.5))
         sns.heatmap(correlation_matrices[index].round(2), annot=True, vmin=-1, vmax=1, center=0, cmap='coolwarm', square=True)
