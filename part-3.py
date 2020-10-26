@@ -35,7 +35,8 @@ for year in years:
     # Read the data of this year
     file_path = data_folder + dir_sep + file_prefix + year + file_suffix
     file_df = pd.read_csv(file_path)
-    
+    del file_df['CO']
+
     # Add to total dataframe
     total_df[year] = file_df
 
@@ -46,10 +47,15 @@ test_df = pd.concat([total_df['2014'], total_df['2015']])
 Y = training_df['NOX']
 X = training_df[input_variable_names]
 
+# Regress on the training data
 regr = linear_model.LinearRegression()
 regr.fit(X, Y)
 
-print('Intercept: \n', regr.intercept_)
-print('Coefficients: \n', regr.coef_)
-print(validation_df)
-print ('Predicted NOX: \n', regr.predict([validation_df.iloc[0][:-2]]))
+# Predict NOX values for the validation data
+Ps = regr.predict(validation_df.iloc[:, :-1])
+
+correlation_df = pd.DataFrame({'NOXa': Ps, 'NOXb': validation_df['NOX']}, columns=['NOXa', 'NOXb'])
+
+NOX_correlation = correlation_df.corr(method='spearman')
+
+print(NOX_correlation)
