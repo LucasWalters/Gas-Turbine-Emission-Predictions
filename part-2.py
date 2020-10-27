@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import json
 import seaborn as sns
+import scipy.stats as sc
 
 
 print_data = False
@@ -11,7 +12,8 @@ print_corr_matrix = False
 save_csv = False
 save_corr_matrices = False
 save_bar_chart = False
-save_line_chart = True
+save_line_chart = False
+do_t_test = True
 
 
 # File naming and path
@@ -60,6 +62,8 @@ years = [ '2011', '2012', '2013', '2014', '2015' ]
 result_data = {}
 # Object that will contain the correlation matrices
 correlation_matrices = {}
+p_df = None
+p_matrices = {}
 # Dataframe that will contain all files combined
 total_df = None
 
@@ -74,17 +78,41 @@ for year in years:
         total_df = file_df
     else:
         total_df = pd.concat([total_df, file_df])
-    
+
+    # if do_t_test:
+    #     print(file_df['NOX'])
+    #     variables = np.array(list(file_df.columns[:-2]))
+    #     for variable in variables:
+    #         stat, p = ttest_rel(list(file_df[variable]), list(file_df['NOX']))
+    #         print('T test ', year, variable, stat, p)
+
     # Calculate stats and put it in the result under this year
     result_data[year] = calc_stats(file_df)
     # Calculate correlation matrix and put it under this year
-    correlation_matrices[year] = file_df.corr(method='spearman')
-    
+    variables = np.array(list(file_df.columns))
+    matrix, p = sc.spearmanr(file_df)
+    matrix = pd.DataFrame(matrix, index=variables, columns=variables)
+    p = pd.DataFrame(p, index=variables, columns=variables)
+    if p_df is None:
+        p_df = pd.DataFrame(index=variables)
+    p_df[year] = p['NOX']
+    correlation_matrices[year] = matrix
+    p_matrices[year] = p
+
 
 
 # Calculate stats of the total dataframe and put it in the result under 'All'
 result_data['All'] = calc_stats(total_df)
-correlation_matrices['All'] = total_df.corr(method='spearman')
+variables = np.array(list(result_data['All'].keys()))
+matrix, p = sc.spearmanr(total_df)
+matrix = pd.DataFrame(matrix, index=variables, columns=variables)
+p = pd.DataFrame(p, index=variables, columns=variables)
+p_df['All'] = p['NOX']
+correlation_matrices['All'] = matrix
+p_matrices['All'] = p
+# for index in p_matrices:
+#     print('\n',index, ':')
+#     print(p_matrices[index]['NOX'])
 
 if print_data:
     # Print the resulting object with nice formatting
@@ -124,6 +152,25 @@ if save_csv:
         df[variable] = df[variable].astype(float)
     df.to_csv('data.csv', float_format='%.2f')
 
+corr_change_variables = variables[:-1]
+
+if do_t_test:
+    # stat, p = ttest_rel(data1, data2)
+
+    # data1 = 5 * np.random.randn(100) + 50
+    # data2 = 5 * randn(100) + 51
+    df_swapped = df.swaplevel(0, 1, axis=0)
+
+    for variable in corr_change_variables:
+        stat, p = sc.ttest_ind(list(df_swapped['mean'][variable][:-1]), list(df_swapped['mean']['NOX'][:-1]))
+        # print('T test ', variable, stat, p)
+    #
+    # for variable in corr_change_variables:
+    #     variable_corrs = []
+    #     for index in years:
+    #         variable_corrs.append(correlation_matrices[index]['NOX'][variable])
+    #     # print(variable_corrs)
+
 if save_corr_matrices:
     # Write correlation matrices to file and plot them
     for index in correlation_matrices:
@@ -131,7 +178,7 @@ if save_corr_matrices:
 
         plt.figure(figsize=(8, 5.5))
         sns.heatmap(correlation_matrices[index].round(2), annot=True, vmin=-1, vmax=1, center=0, cmap='coolwarm', square=True)
-        plt.yticks(rotation=0) 
+        plt.yticks(rotation=0)
         plt.savefig('Correlations_'+str(index)+'.png',bbox_inches='tight')
 
         # Render correlation change matrix
@@ -153,10 +200,9 @@ if save_corr_matrices:
 
         plt.figure(figsize=(8, 5.5))
         sns.heatmap(correlation_matrices[index].round(2), annot=True, vmin=-1, vmax=1, center=0, cmap='coolwarm', square=True)
-        plt.yticks(rotation=0) 
+        plt.yticks(rotation=0)
         plt.savefig('Correlations_'+str(index)+'.png',bbox_inches='tight')
 
-corr_change_variables = variables[:-2]
 
 if save_bar_chart:
     # Prepare data for bar charts
@@ -169,15 +215,14 @@ if save_bar_chart:
     for i in range(len(labels)):
         x.append(label_width * i)
     x = np.array(x)
-    
-    
+
+
 
     for i, variable in enumerate(corr_change_variables):
         variable_corrs = []
         for index in years_and_all:
             variable_corrs.append(correlation_matrices[index]['NOX'][variable])
-            
-        print(variable_corrs)
+
         rects = ax.bar(x + i * width, variable_corrs, width, label=variable, align='edge')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
@@ -190,7 +235,7 @@ if save_bar_chart:
     fig.tight_layout()
 
     plt.show()
-    
+
 if save_line_chart:
     # Prepare data for bar charts
     df_swapped = df.swaplevel(0, 1, axis=0)
@@ -201,16 +246,16 @@ if save_line_chart:
     # for i in range(len(labels)):
         # x.append(label_width * i)
     # x = np.array(x)
-    
+
 
     ax.axhline(linewidth=1, color='k', linestyle='dashed')
     for i, variable in enumerate(corr_change_variables):
         variable_corrs = []
         for index in years:
             variable_corrs.append(correlation_matrices[index]['NOX'][variable])
-            
+
         ax.plot(years, variable_corrs, '--.', label=variable)
-        
+
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Correlation with NOx')
     ax.set_title('Correlation with NOx of variables by year')
@@ -221,6 +266,3 @@ if save_line_chart:
     fig.tight_layout()
     plt.ylim(-1, 1)
     plt.show()
-    
-
-
