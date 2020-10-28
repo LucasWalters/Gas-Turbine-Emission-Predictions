@@ -110,9 +110,10 @@ p = pd.DataFrame(p, index=variables, columns=variables)
 p_df['All'] = p['NOX']
 correlation_matrices['All'] = matrix
 p_matrices['All'] = p
+print(p_df)
 # for index in p_matrices:
-#     print('\n',index, ':')
-#     print(p_matrices[index]['NOX'])
+    # print('\n',index, ':')
+    # print(p_matrices[index]['NOX'])
 
 if print_data:
     # Print the resulting object with nice formatting

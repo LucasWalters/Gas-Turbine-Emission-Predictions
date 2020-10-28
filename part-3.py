@@ -121,32 +121,28 @@ def phase2(baseline, train_data, train_out, val_data, val_out, test_data, test_o
         print("On test with PCA")
         apply_linear_regression(train_merged, train_out, test_merged, test_out)
 
-def predict_blocks(block_train_data, blocks, variable_columns, target_columns):
-    print("Testing block", 10-len(blocks))
-    result = apply_linear_regression(block_train_data[variable_columns], block_train_data[target_columns], blocks[0][variable_columns], blocks[0][target_columns])[1]
-    blocks[0][target_columns] = result
+def predict_blocks(train_data, train_t, blocks, t_blocks):
+    print("Testing block", len(blocks))
+    
+    result = apply_linear_regression(train_data, train_t, blocks[0], t_blocks[0])[1]
+    t_blocks[0] = result
+    new_data = pd.concat([train_data, blocks[0]]).reset_index(drop = True)
+    new_t = pd.concat([train_t, result['NOX']]).reset_index(drop = True)
     if len(blocks) > 1:
-        predict_blocks(pd.concat([block_train_data, blocks[0]]), blocks[1:], variable_columns, target_columns)
-    return pd.concat([block_train_data, blocks[0]])    
+        predict_blocks(new_data, new_t, blocks[1:], t_blocks[1:])
+    return (new_data, new_t)
 
-def predict_blocks2(block_train_data, blocks, variable_columns, target_columns):
-    print("Testing block", 20-len(blocks))
-    result = apply_linear_regression(block_train_data[variable_columns], block_train_data[target_columns], blocks[0][variable_columns], blocks[0][target_columns])[1]
-    blocks[0][target_columns] = result
-    if len(blocks) > 1:
-        predict_blocks(pd.concat([block_train_data, blocks[0]]), blocks[1:], variable_columns, target_columns)
-
-def phase3(train_data, data_2013, data_2014, data_2015, variable_names, target_columns):
-    val_blocks = np.array_split(data_2013, 10)
+def phase3(train_data, train_t, val_data, val_t, test_data, test_t):
+    val_blocks = np.array_split(val_data, 10)
     val_blocks = [df.reset_index(drop = True) for df in val_blocks]
-    test_blocks = []
-    for block in np.array_split(data_2014, 10):
-        test_blocks.append(block)
-    for block in np.array_split(data_2015, 10):
-        test_blocks.append(block)
+    val_t_blocks = np.array_split(val_t, 10)
+    val_t_blocks = [df.reset_index(drop = True) for df in val_t_blocks]
+    test_blocks = np.array_split(test_data, 20)
     test_blocks = [df.reset_index(drop = True) for df in test_blocks]
-    predicted_val_data = predict_blocks(train_data.reset_index(drop = True), val_blocks, variable_names, target_columns)
-    predict_blocks2(predicted_val_data.reset_index(drop = True), test_blocks, variable_names, target_columns)
+    test_t_blocks = np.array_split(test_t, 20)
+    test_t_blocks = [df.reset_index(drop = True) for df in test_t_blocks]
+    (pred_data, pred_t) = predict_blocks(train_data.reset_index(drop = True), train_t.reset_index(drop = True), val_blocks, val_t_blocks)
+    predict_blocks(pred_data.reset_index(drop = True), pred_t.reset_index(drop = True), test_blocks, test_t_blocks)
 
 ### Phase 1: Compute validation and test performance for original features
 print(">>> Original Feature Performance")
@@ -166,4 +162,4 @@ print(">>> Engineered Feature Performance")
 compute_val_and_test_performance(train_data, train_out, val_data, val_out, test_data, test_out)
 
 ### Phase 3
-phase3(train_df, total_df['2013'], total_df['2014'], total_df['2015'], input_variable_names, target_column)
+phase3(train_data, train_out, val_data, val_out, test_data, test_out)
