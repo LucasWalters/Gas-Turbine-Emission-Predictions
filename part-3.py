@@ -51,16 +51,11 @@ train_df = pd.concat([total_df['2011'], total_df['2012']])
 val_df = total_df['2013']
 test_df = pd.concat([total_df['2014'], total_df['2015']])
 
-# Split the data into input and output data
-train_data = train_df[input_variable_names]
-train_out = train_df['NOX']
-val_data = val_df[input_variable_names]
-val_out = val_df['NOX']
-test_data = test_df[input_variable_names]
-test_out = test_df['NOX']
-
-# Normalize the data
-(train_data, val_data, test_data) = z_normalize(train_data, val_data, test_data, input_variable_names)
+target_column = 'NOX'
+# Normalize and split the data
+(train_data, train_out) = z_normalize_and_seperate_target(train_df, input_variable_names, target_column)
+(val_data, val_out) = z_normalize_and_seperate_target(val_df, input_variable_names, target_column)
+(test_data, test_out) = z_normalize_and_seperate_target(test_df, input_variable_names, target_column)
 
 def apply_linear_regression(training_data, training_target, test_data, test_target, prefix = "[TEST]"):
     # Regress on the training data

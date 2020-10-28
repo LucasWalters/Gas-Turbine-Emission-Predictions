@@ -3,16 +3,14 @@ from sklearn.metrics import mean_absolute_error
 from sklearn import linear_model
 from sklearn.preprocessing import StandardScaler
 
-def z_normalize(train_data, val_data, test_data, feature_names):
+def z_normalize_and_seperate_target(df, variable_columns, target_columns):
     # Scale the data on unit scale (mean = 0, variance = 1)
     scaler = StandardScaler()
     # Fit on training set only.
-    scaler.fit(train_data)
+    scaler.fit(df[variable_columns])
     # Apply transform to both the training set and the test set.
-    train_data_norm = pd.DataFrame(scaler.transform(train_data), columns = feature_names)
-    val_data_norm = pd.DataFrame(scaler.transform(val_data), columns = feature_names)
-    test_scaled = pd.DataFrame(scaler.transform(test_data), columns = feature_names)
-    return (train_data_norm, val_data_norm, test_scaled)
+    df_scaled = pd.DataFrame(scaler.transform(df[variable_columns]), columns = variable_columns)
+    return (df_scaled, df[target_columns])
 
 def compute_performance(name, pred, observed):
     correlation_df = pd.DataFrame({'NOXa': pred, 'NOXb': observed}, columns=['NOXa', 'NOXb'])
