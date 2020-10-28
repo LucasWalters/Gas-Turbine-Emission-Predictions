@@ -95,18 +95,25 @@ if apply_pca:
     # Scale the data on unit scale (mean = 0, variance = 1)
     scaler = StandardScaler()
     # Fit on training set only.
-    scaler.fit(training_df.iloc[:,:-1])
+    scaler.fit(train_data)
     # Apply transform to both the training set and the test set.
-    train_scaled = scaler.transform(training_df.iloc[:,:-1])
-    test_scaled = scaler.transform(test_df.iloc[:,:-1])
+    train_scaled = scaler.transform(train_data)
+    test_scaled = scaler.transform(test_df[input_variable_names])
     # Make an instance of the Model. .95 means the minimum number of principal components such that 95% of the variance is retained.
     pca = PCA(.95)
     
     pca.fit(train_scaled)
-    train_scaled = pca.transform(train_scaled)
-    test_scaled = pca.transform(test_scaled)
+    train_pca = pca.transform(train_scaled)
+    test_pca = pca.transform(test_scaled)
     
-    print(pd.DataFrame(train_scaled).head())
+    train_scaled_df = pd.DataFrame(train_scaled, columns = [input_variable_names])
+    train_pca_df = pd.DataFrame(train_pca, columns = ['pca_' + str(x) for x in range(len(train_pca[0]))])
     
-    apply_linear_regression(train_scaled, training_df['NOX'], test_scaled, test_df['NOX'])
+    test_scaled_df = pd.DataFrame(test_scaled, columns = [input_variable_names])
+    test_pca_df = pd.DataFrame(test_pca, columns = ['pca_' + str(x) for x in range(len(train_pca[0]))])
+    
+    train_merged = pd.concat([train_scaled_df, train_pca_df], axis = 1)
+    test_merged = pd.concat([test_scaled_df, test_pca_df], axis = 1)
+    
+    apply_linear_regression(train_merged, train_obs, test_merged, test_df['NOX'])
 
