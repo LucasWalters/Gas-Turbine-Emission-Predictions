@@ -131,8 +131,8 @@ def phase2(training_df, validation_df, test_df):
         # Make an instance of the Model. .95 means the minimum number of principal components such that 95% of the variance is retained.
         pca = PCA(.95)
         
-        pca.fit(training_data)
-        pca_training_data = pca.transform(training_data)
+        pca.fit(training_df)
+        pca_training_data = pca.transform(training_df)
         pca_test_data = pca.transform(test_df)
         
         print(pd.DataFrame(pca_training_data).head())
