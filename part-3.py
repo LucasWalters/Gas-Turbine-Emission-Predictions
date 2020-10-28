@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn import linear_model
 from sklearn.metrics import mean_absolute_error
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+
+apply_pca = True
 
 # File naming and path
 data_folder = 'pp_gas_emission'
@@ -55,30 +59,54 @@ def compute_performance(name, pred, observed):
     print(name + " NOX Mean absolute error: " + str(NOX_mae))
     print(name + " NOX R^2: " + str(NOX_r2))
 
-### Predict NOX values for the validation data
-Y = training_df['NOX']
-X = training_df[input_variable_names]
+def apply_linear_regression(training_data, training_target, test_data, test_target):
+    # Regress on the training data
+    regr = linear_model.LinearRegression()
+    regr.fit(training_data, training_target)
 
-# Regress on the training data
-regr = linear_model.LinearRegression()
-regr.fit(X, Y)
+    # Predict on test data
+    test_pred = regr.predict(test_data)
+
+    compute_performance("[TEST]", test_pred, test_target)
+
+### Predict NOX values for the validation data
+train_data = training_df[input_variable_names]
+train_obs = training_df['NOX']
 
 # Predict on validation data
-val_pred = regr.predict(validation_df.iloc[:, :-1])
+val_data = validation_df.iloc[:, :-1]
 val_obs = validation_df['NOX']
 
-compute_performance("[VAL]", val_pred, val_obs)
+apply_linear_regression(train_data, train_obs, val_data, val_obs)
+
 
 ### Predict NOX values for the test data
-Y = pd.concat([training_df, validation_df])['NOX']
-X = pd.concat([training_df, validation_df])[input_variable_names]
-
-# Regress on the training data
-regr = linear_model.LinearRegression()
-regr.fit(X, Y)
+train_data = pd.concat([training_df, validation_df])[input_variable_names] 
+train_obs = pd.concat([training_df, validation_df])['NOX']
 
 # Predict on test data
-test_pred = regr.predict(test_df.iloc[:, :-1])
+test_data = test_df.iloc[:, :-1]
 test_obs = test_df['NOX']
 
-compute_performance("[TEST]", test_pred, test_obs)
+apply_linear_regression(train_data, train_obs, test_data, test_obs)
+
+
+if apply_pca:
+    # Scale the data on unit scale (mean = 0, variance = 1)
+    scaler = StandardScaler()
+    # Fit on training set only.
+    scaler.fit(training_df.iloc[:,:-1])
+    # Apply transform to both the training set and the test set.
+    train_scaled = scaler.transform(training_df.iloc[:,:-1])
+    test_scaled = scaler.transform(test_df.iloc[:,:-1])
+    # Make an instance of the Model. .95 means the minimum number of principal components such that 95% of the variance is retained.
+    pca = PCA(.95)
+    
+    pca.fit(train_scaled)
+    train_scaled = pca.transform(train_scaled)
+    test_scaled = pca.transform(test_scaled)
+    
+    print(pd.DataFrame(train_scaled).head())
+    
+    apply_linear_regression(train_scaled, training_df['NOX'], test_scaled, test_df['NOX'])
+
