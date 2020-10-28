@@ -87,32 +87,13 @@ def apply_linear_regression(training_data, training_target, test_data, test_targ
 
 def phase1(training_df, validation_df, test_df):
     ### Predict NOX values for the validation data
-    Y = training_df['NOX']
-    X = training_df[input_variable_names]
-
-    # Regress on the training data
-    regr = linear_model.LinearRegression()
-    regr.fit(X, Y)
-
-    # Predict on validation data
-    val_pred = regr.predict(validation_df[input_variable_names])
-    val_obs = validation_df['NOX']
-
-    compute_performance("[VAL]", val_pred, val_obs)
+    apply_linear_regression(training_df[input_variable_names], training_df['NOX'], validation_df[input_variable_names], validation_df['NOX'])
 
     ### Predict NOX values for the test data
-    Y = pd.concat([training_df, validation_df])['NOX']
     X = pd.concat([training_df, validation_df])[input_variable_names]
+    Y = pd.concat([training_df, validation_df])['NOX']
 
-    # Regress on the training data
-    regr = linear_model.LinearRegression()
-    regr.fit(X, Y)
-
-    # Predict on test data
-    test_pred = regr.predict(test_df.iloc[:, :-1])
-    test_obs = test_df['NOX']
-
-    compute_performance("[TEST]", test_pred, test_obs)
+    apply_linear_regression(X, Y, test_df[input_variable_names], test_df['NOX'])
 
 def phase2(training_df, validation_df, test_df):
     ### Predict NOX values for the validation data
@@ -141,6 +122,7 @@ def phase2(training_df, validation_df, test_df):
 
         compute_performance("[ENG-VAL]", val_pred, val_obs)
 
+(training_df, validation_df, test_df) = z_normalize(training_df, validation_df, test_df)
 phase1(training_df, validation_df, test_df)
 phase2(training_df, validation_df, test_df)
 
