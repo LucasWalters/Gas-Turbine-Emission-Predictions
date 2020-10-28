@@ -13,6 +13,17 @@ def z_normalize_and_seperate_target(df, variable_columns, target_columns):
     df_scaled = pd.DataFrame(scaler.transform(df[variable_columns]), columns = variable_columns)
     return (df_scaled, df[target_columns])
 
+def z_normalize(train_data, val_data, test_data, feature_names):
+    # Scale the data on unit scale (mean = 0, variance = 1)
+    scaler = StandardScaler()
+    # Fit on training set only.
+    scaler.fit(train_data)
+    # Apply transform to both the training set and the test set.
+    train_data_norm = pd.DataFrame(scaler.transform(train_data), columns = feature_names)
+    val_data_norm = pd.DataFrame(scaler.transform(val_data), columns = feature_names)
+    test_scaled = pd.DataFrame(scaler.transform(test_data), columns = feature_names)
+    return (train_data_norm, val_data_norm, test_scaled)
+
 def compute_performance(pred, observed):
     correlation_df = pd.DataFrame({'NOXa': pred, 'NOXb': observed}, columns=['NOXa', 'NOXb'])
     NOX_correlation = correlation_df.corr(method='spearman').iloc[1][0]
