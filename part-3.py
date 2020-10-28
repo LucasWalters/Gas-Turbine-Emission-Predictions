@@ -54,22 +54,34 @@ def apply_linear_regression(training_data, training_target, test_data, test_targ
     
     (SC, MAE, R2) = compute_performance(test_pred, test_target)
     print_performance(SC, MAE, R2)
-    return pd.DataFrame(test_pred, columns=[target_column])
+    return ((SC, MAE, R2), pd.DataFrame(test_pred, columns=[target_column]))
 
-def phase1(training_df, training_t, validation_df, validation_t, test_df, test_t):
+def compute_val_and_test_performance(train_data, train_out, val_data, val_out, test_data, test_out):
     ### Predict NOX values for the validation data
-    print("PREDICTION ON VALIDATION DATA")
-    apply_linear_regression(training_df, training_t, validation_df, validation_t)
+    (vSC, vMAE, vR2) = apply_linear_regression(train_data, train_out, val_data, val_out)
 
     ### Predict NOX values for the test data
-    X = pd.concat([training_df, validation_df])
-    Y = pd.concat([training_t, validation_t])
+    X = pd.concat([train_data, val_data])
+    Y = pd.concat([train_out, val_out])
 
-    #apply_linear_regression(X, Y, test_df, test_t)
+    (tSC, tMAE, tR2) = apply_linear_regression(X, Y, test_data, test_ou)
+    return ((vSC, vMAE, vR2), (tSC, tMAE, tR2))
 
-def phase2(train_data, train_out, val_data, val_out, test_data, test_out):
-    #find_features(reduced_input_variable_names, train_data.copy(), train_out, val_data.copy(), val_out)
+def phase2(baseline, train_data, train_out, val_data, val_out, test_data, test_out):
+    #feature_comb = find_features(baseline[0], input_variable_names, train_data.copy(), train_out, val_data.copy(), val_out)
+    feature_comb = [('AH', 'TAT'), ('AFDP', 'TAT'), ('GTEP', 'TIT'), ('TEY', 'CDP')]
     
+    train_data = apply_engineered_features(train_data, feature_comb)
+    val_data = apply_engineered_features(val_data, feature_comb)
+    test_data = apply_engineered_features(test_data, feature_comb)
+
+    print("Engineered validation performance")
+    apply_linear_regression(train_data, train_out, val_data, val_out, "[VAL-ENGINEERED]")
+    print("Engineered test performance")
+    train_val_data = pd.concat([train_data, val_data])
+    train_val_out = pd.concat([train_out, val_out])
+    apply_linear_regression(train_val_data, train_val_out, test_data, test_out, "[TEST-ENGINEERED]")
+
     train_reduced = train_data[reduced_input_variable_names]
     val_reduced = val_data[reduced_input_variable_names]
     test_reduced = test_data[reduced_input_variable_names]
@@ -107,23 +119,30 @@ def predict_blocks(block_train_data, blocks, variable_columns, target_columns):
     if len(blocks) > 1:
         predict_blocks(pd.concat([block_train_data, blocks[0]]), np.delete(blocks, 0), variable_columns, target_columns)
 
-
-
 def phase3(train_data, data_2013, data_2014, data_2015, variable_names, target_columns):
     val_blocks = np.array_split(data_2013, 10)
     val_blocks = [df.reset_index(drop = True) for df in val_blocks]
     test_blocks = np.append(np.array_split(data_2014, 10), np.array_split(data_2015, 10))
     test_blocks = [df.reset_index(drop = True) for df in test_blocks]
     predict_blocks(train_data.reset_index(drop = True), val_blocks, variable_names, target_columns)
-    
 
-#phase1(training_df, training_t, validation_df, validation_t, test_df, test_t)
-# phase2(train_data, train_out, val_data, val_out, test_data, test_out)
+### Phase 1: Compute validation and test performance for original features
+print(">>> Original Feature Performance")
+baseline = compute_val_and_test_performance(train_data, train_out, val_data, val_out, test_data, test_out)
 
+### Find new engineered features
+#feature_comb = find_features(baseline[0], input_variable_names, train_data.copy(), train_out, val_data.copy(), val_out)
+feature_comb = [('AH', 'TAT'), ('AFDP', 'TAT'), ('GTEP', 'TIT'), ('TEY', 'CDP')]
 
+### Apply features to all datasets
+train_data = apply_engineered_features(train_data, feature_comb)
+val_data = apply_engineered_features(val_data, feature_comb)
+test_data = apply_engineered_features(test_data, feature_comb)
+
+### Phase 2: Compute validation and test performance for engineered features
+print(">>> Engineered Feature Performance")
+compute_val_and_test_performance(train_data, train_out, val_data, val_out, test_data, test_out)
+
+### Phase 3
 phase3(train_df, total_df['2013'], total_df['2014'], total_df['2015'], input_variable_names, target_column)
-
-
-
-
 
