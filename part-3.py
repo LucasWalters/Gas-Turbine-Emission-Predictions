@@ -58,13 +58,15 @@ def apply_linear_regression(training_data, training_target, test_data, test_targ
 
 def compute_val_and_test_performance(train_data, train_out, val_data, val_out, test_data, test_out):
     ### Predict NOX values for the validation data
-    (vSC, vMAE, vR2) = apply_linear_regression(train_data, train_out, val_data, val_out)
+    print("> Validation performance")
+    (vSC, vMAE, vR2) = apply_linear_regression(train_data, train_out, val_data, val_out)[0]
 
     ### Predict NOX values for the test data
     X = pd.concat([train_data, val_data])
     Y = pd.concat([train_out, val_out])
 
-    (tSC, tMAE, tR2) = apply_linear_regression(X, Y, test_data, test_ou)
+    print("> Test performance")
+    (tSC, tMAE, tR2) = apply_linear_regression(X, Y, test_data, test_out)[0]
     return ((vSC, vMAE, vR2), (tSC, tMAE, tR2))
 
 def phase2(baseline, train_data, train_out, val_data, val_out, test_data, test_out):
@@ -145,4 +147,3 @@ compute_val_and_test_performance(train_data, train_out, val_data, val_out, test_
 
 ### Phase 3
 phase3(train_df, total_df['2013'], total_df['2014'], total_df['2015'], input_variable_names, target_column)
-
