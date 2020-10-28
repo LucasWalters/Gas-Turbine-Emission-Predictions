@@ -26,6 +26,7 @@ variable_data = {
 }
 
 input_variable_names = ['AT', 'AP', 'AH', 'AFDP', 'GTEP', 'TIT', 'TAT', 'TEY', 'CDP']
+reduced_input_variable_names = ['AT', 'AP', 'AFDP', 'TIT', 'TAT', 'TEY', 'CDP']
 
 # Years that we have data from
 years = [ '2011', '2012', '2013', '2014', '2015' ]
@@ -49,6 +50,20 @@ training_df = pd.concat([total_df['2011'], total_df['2012']])
 validation_df = total_df['2013']
 test_df = pd.concat([total_df['2014'], total_df['2015']])
 
+def z_normalize(training_df, validation_df, test_df):
+    # Scale the data on unit scale (mean = 0, variance = 1)
+    scaler = StandardScaler()
+    # Fit on training set only.
+    scaler.fit(training_df[input_variable_names])
+    # Apply transform to both the training set and the test set.
+    train_scaled = scaler.transform(training_df[input_variable_names])
+    val_scaled = scaler.transform(validation_df[input_variable_names])
+    test_scaled = scaler.transform(test_df[input_variable_names])
+    return (train_scaled, val_scaled, test_scaled)
+
+z_normalize(training_df, validation_df, test_df)
+
+
 def compute_performance(name, pred, observed):
     correlation_df = pd.DataFrame({'NOXa': pred, 'NOXb': observed}, columns=['NOXa', 'NOXb'])
     NOX_correlation = correlation_df.corr(method='spearman').iloc[1][0]
@@ -58,6 +73,7 @@ def compute_performance(name, pred, observed):
     print(name + " NOX Spearman Correlation: " + str(NOX_correlation))
     print(name + " NOX Mean absolute error: " + str(NOX_mae))
     print(name + " NOX R^2: " + str(NOX_r2))
+
 
 def apply_linear_regression(training_data, training_target, test_data, test_target):
     # Regress on the training data
@@ -69,44 +85,62 @@ def apply_linear_regression(training_data, training_target, test_data, test_targ
 
     compute_performance("[TEST]", test_pred, test_target)
 
-### Predict NOX values for the validation data
-train_data = training_df[input_variable_names]
-train_obs = training_df['NOX']
+def phase1(training_df, validation_df, test_df):
+    ### Predict NOX values for the validation data
+    Y = training_df['NOX']
+    X = training_df[input_variable_names]
 
-# Predict on validation data
-val_data = validation_df.iloc[:, :-1]
-val_obs = validation_df['NOX']
+    # Regress on the training data
+    regr = linear_model.LinearRegression()
+    regr.fit(X, Y)
 
-apply_linear_regression(train_data, train_obs, val_data, val_obs)
+    # Predict on validation data
+    val_pred = regr.predict(validation_df[input_variable_names])
+    val_obs = validation_df['NOX']
 
+    compute_performance("[VAL]", val_pred, val_obs)
 
-### Predict NOX values for the test data
-train_data = pd.concat([training_df, validation_df])[input_variable_names] 
-train_obs = pd.concat([training_df, validation_df])['NOX']
+    ### Predict NOX values for the test data
+    Y = pd.concat([training_df, validation_df])['NOX']
+    X = pd.concat([training_df, validation_df])[input_variable_names]
 
-# Predict on test data
-test_data = test_df.iloc[:, :-1]
-test_obs = test_df['NOX']
+    # Regress on the training data
+    regr = linear_model.LinearRegression()
+    regr.fit(X, Y)
 
-apply_linear_regression(train_data, train_obs, test_data, test_obs)
+    # Predict on test data
+    test_pred = regr.predict(test_df.iloc[:, :-1])
+    test_obs = test_df['NOX']
 
+    compute_performance("[TEST]", test_pred, test_obs)
 
-if apply_pca:
-    # Scale the data on unit scale (mean = 0, variance = 1)
-    scaler = StandardScaler()
-    # Fit on training set only.
-    scaler.fit(training_df.iloc[:,:-1])
-    # Apply transform to both the training set and the test set.
-    train_scaled = scaler.transform(training_df.iloc[:,:-1])
-    test_scaled = scaler.transform(test_df.iloc[:,:-1])
-    # Make an instance of the Model. .95 means the minimum number of principal components such that 95% of the variance is retained.
-    pca = PCA(.95)
-    
-    pca.fit(train_scaled)
-    train_scaled = pca.transform(train_scaled)
-    test_scaled = pca.transform(test_scaled)
-    
-    print(pd.DataFrame(train_scaled).head())
-    
-    apply_linear_regression(train_scaled, training_df['NOX'], test_scaled, test_df['NOX'])
+def phase2(training_df, validation_df, test_df):
+    ### Predict NOX values for the validation data
+    Y = training_df['NOX']
+    X = training_df[reduced_input_variable_names]
+
+    # Regress on the training data
+    regr = linear_model.LinearRegression()
+    regr.fit(X, Y)
+
+    # Predict on validation data
+    val_pred = regr.predict(validation_df[reduced_input_variable_names])
+    val_obs = validation_df['NOX']
+
+    if apply_pca:
+        # Make an instance of the Model. .95 means the minimum number of principal components such that 95% of the variance is retained.
+        pca = PCA(.95)
+        
+        pca.fit(training_data)
+        pca_training_data = pca.transform(training_data)
+        pca_test_data = pca.transform(test_df)
+        
+        print(pd.DataFrame(pca_training_data).head())
+        
+        apply_linear_regression(pca_training_data, training_df['NOX'], pca_test_data, test_df['NOX'])
+
+        compute_performance("[ENG-VAL]", val_pred, val_obs)
+
+phase1(training_df, validation_df, test_df)
+phase2(training_df, validation_df, test_df)
 
