@@ -93,41 +93,29 @@ def phase1(training_df, training_t, validation_df, validation_t, test_df, test_t
     apply_linear_regression(X, Y, test_df, test_t, "[TEST]")
 
 def phase2(training_df, training_t, validation_df, validation_t, test_df, test_t):
-    ### Predict NOX values for the validation data
-    Y = training_t
-    X = training_df[reduced_input_variable_names]
+    train_reduced = training_df[reduced_input_variable_names]
+    test_reduced = test_df[reduced_input_variable_names]
+    validation_reduced = validation_df[reduced_input_variable_names]
     
-    # Regress on the training data
-    regr = linear_model.LinearRegression()
-    regr.fit(X, Y)
-
-    # Predict on validation data
-    val_pred = regr.predict(validation_df[reduced_input_variable_names])
-    val_obs = validation_t
-    
-    compute_performance("[ENG-VAL]", val_pred, val_obs)
+    apply_linear_regression(train_reduced, training_t, validation_reduced, validation_t, "[VAL-REDUCED]")
 
     if apply_pca:
         # Make an instance of the Model. .95 means the minimum number of principal components such that 95% of the variance is retained.
         pca = PCA(.95)
         
-        train_scaled = training_df[reduced_input_variable_names]
-        test_scaled = test_df[reduced_input_variable_names]
-        validation_scaled = validation_df[reduced_input_variable_names]
+        pca.fit(train_reduced)
         
-        pca.fit(train_scaled)
-        
-        train_pca = pca.transform(train_scaled)
-        test_pca = pca.transform(test_scaled)
-        validation_pca = pca.transform(validation_scaled)
+        train_pca = pca.transform(train_reduced)
+        test_pca = pca.transform(test_reduced)
+        validation_pca = pca.transform(validation_reduced)
         
         train_pca_df = pd.DataFrame(train_pca, columns = ['pca_' + str(x) for x in range(len(train_pca[0]))])
         test_pca_df = pd.DataFrame(test_pca, columns = ['pca_' + str(x) for x in range(len(test_pca[0]))])
         validation_pca_df = pd.DataFrame(validation_pca, columns = ['pca_' + str(x) for x in range(len(validation_pca[0]))])
         
-        train_merged = pd.concat([train_scaled, train_pca_df], axis = 1)
-        test_merged = pd.concat([test_scaled, test_pca_df], axis = 1)
-        validation_merged = pd.concat([validation_scaled, validation_pca_df], axis = 1)
+        train_merged = pd.concat([train_reduced, train_pca_df], axis = 1)
+        test_merged = pd.concat([test_reduced, test_pca_df], axis = 1)
+        validation_merged = pd.concat([validation_reduced, validation_pca_df], axis = 1)
         
         apply_linear_regression(train_merged, training_t, validation_merged, validation_t, "[VAL-PCA]")
         apply_linear_regression(train_merged, training_t, test_merged, test_t, "[TEST-PCA]")
