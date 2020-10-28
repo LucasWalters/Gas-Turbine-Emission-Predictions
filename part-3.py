@@ -127,6 +127,7 @@ def predict_blocks(block_train_data, blocks, variable_columns, target_columns):
     blocks[0][target_columns] = result
     if len(blocks) > 1:
         predict_blocks(pd.concat([block_train_data, blocks[0]]), blocks[1:], variable_columns, target_columns)
+    return pd.concat([block_train_data, blocks[0]])    
 
 def predict_blocks2(block_train_data, blocks, variable_columns, target_columns):
     print("Testing block", 20-len(blocks))
@@ -134,7 +135,6 @@ def predict_blocks2(block_train_data, blocks, variable_columns, target_columns):
     blocks[0][target_columns] = result
     if len(blocks) > 1:
         predict_blocks(pd.concat([block_train_data, blocks[0]]), blocks[1:], variable_columns, target_columns)
-
 
 def phase3(train_data, data_2013, data_2014, data_2015, variable_names, target_columns):
     val_blocks = np.array_split(data_2013, 10)
@@ -145,8 +145,8 @@ def phase3(train_data, data_2013, data_2014, data_2015, variable_names, target_c
     for block in np.array_split(data_2015, 10):
         test_blocks.append(block)
     test_blocks = [df.reset_index(drop = True) for df in test_blocks]
-    predict_blocks(train_data.reset_index(drop = True), val_blocks, variable_names, target_columns)
-    #predict_blocks2(predicted_val_data.reset_index(drop = True), test_blocks, variable_names, target_columns)
+    predicted_val_data = predict_blocks(train_data.reset_index(drop = True), val_blocks, variable_names, target_columns)
+    predict_blocks2(predicted_val_data.reset_index(drop = True), test_blocks, variable_names, target_columns)
 
 ### Phase 1: Compute validation and test performance for original features
 print(">>> Original Feature Performance")
