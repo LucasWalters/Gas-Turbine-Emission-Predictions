@@ -12,7 +12,7 @@ def z_normalize_and_seperate_target(df, variable_columns, target_columns):
     df_scaled = pd.DataFrame(scaler.transform(df[variable_columns]), columns = variable_columns)
     return (df_scaled, df[target_columns])
 
-def compute_performance(name, pred, observed):
+def compute_performance(pred, observed):
     correlation_df = pd.DataFrame({'NOXa': pred, 'NOXb': observed}, columns=['NOXa', 'NOXb'])
     NOX_correlation = correlation_df.corr(method='spearman').iloc[1][0]
     NOX_mae = mean_absolute_error(observed, pred)
